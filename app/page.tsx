@@ -1,4 +1,79 @@
-Онлайн • відповідає миттєво
+[06.06.2026 22:46] Денис: "use client";
+import { useState, useRef, useEffect } from "react";
+
+const SYSTEM_PROMPT = `Ти AI-асистент магазину техніки та електроніки.
+Твоя задача — допомагати клієнтам знаходити товари, відповідати на питання про наявність, ціни, характеристики, доставку та гарантію.
+Відповідай українською мовою, дружньо і по суті.
+Загальна інформація про магазин:
+- Безкоштовна доставка від 1000 грн
+- Гарантія до 12 місяців
+- Є розстрочка та кредит
+- Trade-in (обмін старого на нове)
+- Кешбек 1-20% на кожну покупку
+- 250 000+ товарів, 700+ брендів`;
+
+const SUGGESTIONS = [
+  "Які iPhone зараз є в наявності?",
+  "Скільки коштує MacBook Air M3?",
+  "Є безкоштовна доставка?",
+  "Як працює trade-in?",
+];
+
+export default function Home() {
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Привіт! Я AI-асистент 👋\nДопоможу знайти техніку, перевірити ціни та наявність. Що вас цікавить?" },
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  async function sendMessage(text?: string) {
+    const userText = text || input.trim();
+    if (!userText || loading) return;
+    setInput("");
+    const newMessages = [...messages, { role: "user", content: userText }];
+    setMessages(newMessages);
+    setLoading(true);
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+        }),
+      });
+      const data = await response.json();
+      const fullText = data.content?.filter((b: any) => b.type === "text").map((b: any) => b.text).join("\n");
+      setMessages([...newMessages, { role: "assistant", content: fullText || "Не вдалося отримати відповідь 🙏" }]);
+    } catch (e) {
+      setMessages([...newMessages, { role: "assistant", content: "Вибачте, сталася помилка 🙏" }]);
+    }
+    setLoading(false);
+  }
+
+  function handleKey(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0a0a0a,#111827)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Manrope',sans-serif", padding:"16px" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{display:none}*{box-sizing:border-box}`}</style>
+      <div style={{ width:"100%", maxWidth:"480px", display:"flex", flexDirection:"column", height:"90vh", maxHeight:"700px", background:"#111", borderRadius:"24px", overflow:"hidden", border:"1px solid rgba(255,255,255,0.08)", boxShadow:"0 32px 80px rgba(0,0,0,0.6)" }}>
+        <div style={{ padding:"20px 24px", background:"linear-gradient(135deg,#1a1a1a,#222)", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", alignItems:"center", gap:"14px" }}>
+          <div style={{ width:"44px", height:"44px", borderRadius:"14px", background:"linear-gradient(135deg,#ff8c00,#ff6b00)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"20px" }}>🤖</div>
+          <div>
+            <div style={{ fontWeight:800, fontSize:"15px", color:"#fff" }}>AI Assistant</div>
+            <div style={{ fontSize:"12px", color:"#4ade80", fontWeight:500, display:"flex", alignItems:"center", gap:"5px" }}>
+              <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#4ade80", display:"inline-block" }}/>
+[06.06.2026 22:46] Денис: Онлайн • відповідає миттєво
             </div>
           </div>
         </div>
