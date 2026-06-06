@@ -3,13 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const apiKey = req.headers.get("x-api-key");
+    const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json({ error: "No API key" }, { status: 401 });
     }
 
-    // Remove tools - not available on free tier
     const { tools, ...bodyWithoutTools } = body;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -23,8 +22,6 @@ export async function POST(req: NextRequest) {
     });
 
     const text = await response.text();
-    console.log("Anthropic status:", response.status, "body:", text.slice(0, 500));
-
     return new NextResponse(text, {
       status: response.status,
       headers: { "Content-Type": "application/json" },
